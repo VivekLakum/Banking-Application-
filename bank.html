@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Banking App — Account Factory (Single HTML)</title>
+  <style>
+    :root{--bg:#f6f8fb;--card:#fff;--accent:#2563eb;--muted:#64748b}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{background:linear-gradient(180deg,var(--bg),#eef2ff);padding:28px;box-sizing:border-box;color:#0f172a}
+    .container{max-width:980px;margin:0 auto}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(15,23,42,0.06);}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select{width:100%;padding:8px 10px;border:1px solid #e6eef8;border-radius:8px;font-size:14px}
+    button{background:var(--accent);color:#fff;border:0;padding:9px 12px;border-radius:8px;font-weight:600;cursor:pointer}
+    .muted{color:var(--muted);font-size:13px}
+    .accounts-list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+    .acct{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:linear-gradient(180deg,#ffffff,#fbfdff);border:1px solid #eef6ff}
+    .acct .meta{max-width:58%}
+    .acct .meta b{display:block;font-size:15px}
+    .actions{display:flex;gap:8px}
+    .secondary{background:#eef2ff;color:var(--accent);border:0;padding:8px;border-radius:8px}
+    .small{padding:6px 8px;font-size:13px}
+    .log{margin-top:14px;padding:10px;background:#0f172a;color:#fff;border-radius:8px;height:140px;overflow:auto;font-family:monospace;font-size:12px}
+    .foot{margin-top:12px;color:var(--muted);font-size:13px}
+    @media (max-width:840px){.grid{grid-template-columns:1fr} .accounts-list{gap:8px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <header>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="6" fill="#eef2ff"/><path d="M7 12h10M7 8h10M7 16h6" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          <h1>Banking App — Account Factory</h1>
+          <div class="muted">Create Savings, Current and Loan accounts using a Factory pattern (single HTML file)</div>
+        </div>
+      </header>
+
+      <div class="grid">
+        <div>
+          <div class="card" style="padding:14px">
+            <label for="acctType">Account Type</label>
+            <select id="acctType">
+              <option value="Savings">Savings Account</option>
+              <option value="Current">Current Account</option>
+              <option value="Loan">Loan Account</option>
+            </select>
+
+            <div style="height:10px"></div>
+
+            <label for="holder">Account Holder Name</label>
+            <input id="holder" placeholder="Ex: Priya Sharma" />
+
+            <div style="height:10px"></div>
+
+            <div id="dynamicFields">
+              <!-- dynamic fields for each account type will be injected here -->
+            </div>
+
+            <div style="height:12px"></div>
+            <div style="display:flex;gap:8px">
+              <button id="createBtn">Create Account</button>
+              <button id="clearBtn" class="secondary">Clear Form</button>
+            </div>
+
+            <div class="foot">Tip: choose account type to see relevant fields. Accounts are kept in-memory (page refresh clears them).</div>
+          </div>
+
+          <div style="margin-top:12px" class="card">
+            <h3 style="margin:0 0 8px 0">Actions / Quick Ops</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="depositAll" class="small">Deposit 1000 to selected</button>
+              <button id="withdrawAll" class="small secondary">Withdraw 500 from selected</button>
+              <button id="listAll" class="small">Refresh List</button>
+              <button id="clearAll" class="small secondary">Remove All Accounts</button>
+            </div>
+            <div class="log" id="log">Console log — actions will appear here.</div>
+          </div>
+        </div>
+
+        <aside>
+          <div class="card">
+            <h3 style="margin:0 0 10px 0">Accounts</h3>
+            <div class="accounts-list" id="accounts"></div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <h3 style="margin:0 0 8px 0">Explanation (Factory)</h3>
+            <p class="muted" style="margin:0">A Factory function (createAccount) takes a type and options and returns an account object specific to that type (Savings, Current or Loan). Each account type exposes methods appropriate for it (deposit, withdraw, info, computeInterest / computeEMI).</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============== Account Classes ==============
+    class Account {
+      constructor({id, holder, balance = 0}){
+        this.id = id;
+        this.holder = holder;
+        this.balance = Number(balance);
+        this.type = 'Account';
+      }
+      deposit(amount){
+        amount = Number(amount);
+        if(amount <= 0) throw new Error('Deposit must be > 0');
+        this.balance += amount;
+        return this.balance;
+      }
+      withdraw(amount){
+        amount = Number(amount);
+        if(amount <= 0) throw new Error('Withdraw must be > 0');
+        if(amount > this.balance) throw new Error('Insufficient funds');
+        this.balance -= amount;
+        return this.balance;
+      }
+      info(){
+        return {
+          id: this.id,
+          holder: this.holder,
+          type: this.type,
+          balance: this.balance
+        }
+      }
+    }
+
+    class SavingsAccount extends Account {
+      constructor(opts){
+        super(opts);
+        this.type = 'Savings';
+        this.interestRate = Number(opts.interestRate ?? 4.0); // percent
+      }
+      // simple interest for demonstration (amount * rate * years / 100)
+      computeInterest(years = 1){
+        years = Number(years);
+        const interest = (this.balance * this.interestRate * years) / 100;
+        return Number(interest.toFixed(2));
+      }
+    }
+
+    class CurrentAccount extends Account {
+      constructor(opts){
+        super(opts);
+        this.type = 'Current';
+        this.overdraftLimit = Number(opts.overdraftLimit ?? 0);
+      }
+      withdraw(amount){
+        amount = Number(amount);
+        if(amount <= 0) throw new Error('Withdraw must be > 0');
+        if(this.balance - amount < -this.overdraftLimit) throw new Error('Overdraft limit exceeded');
+        this.balance -= amount;
+        return this.balance;
+      }
+    }
+
+    class LoanAccount extends Account {
+      constructor(opts){
+        super(opts);
+        this.type = 'Loan';
+        // For loans, balance represents outstanding principal (positive)
+        this.rate = Number(opts.rate ?? 8.5); // annual percent
+        this.termYears = Number(opts.termYears ?? 1);
+      }
+      // compute simple EMI (monthly) using formula
+      computeEMI(){
+        const P = Number(this.balance);
+        const r = (this.rate/100) / 12; // monthly rate
+        const n = this.termYears * 12; // months
+        if(r === 0) return Number((P / n).toFixed(2));
+        const emi = (P * r * Math.pow(1+r,n)) / (Math.pow(1+r,n) - 1);
+        return Number(emi.toFixed(2));
+      }
+      // pay part of the loan (reduce principal)
+      pay(amount){
+        amount = Number(amount);
+        if(amount <= 0) throw new Error('Payment must be > 0');
+        this.balance = Math.max(0, this.balance - amount);
+        return this.balance;
+      }
+      // override deposit/withdraw semantics to align with loan
+      deposit(amount){ return this.pay(amount); }
+      withdraw(){ throw new Error('Cannot withdraw from a loan account'); }
+    }
+
+    // ================= Factory ==================
+    function createAccount(type, opts){
+      const id = opts.id ?? 'AC' + Math.random().toString(36).slice(2,9).toUpperCase();
+      const base = { id, holder: opts.holder || 'Unnamed', balance: opts.balance ?? 0 };
+      switch(type){
+        case 'Savings':
+          return new SavingsAccount({...base, interestRate: opts.interestRate});
+        case 'Current':
+          return new CurrentAccount({...base, overdraftLimit: opts.overdraftLimit});
+        case 'Loan':
+          return new LoanAccount({...base, rate: opts.rate, termYears: opts.termYears});
+        default:
+          throw new Error('Unknown account type');
+      }
+    }
+
+    // =========== In-memory store & utilities ==========
+    const store = [];
+    const $ = id => document.getElementById(id);
+    const log = (msg) => {
+      const el = $('log');
+      const ts = new Date().toLocaleTimeString();
+      el.innerText = [${ts}] ${msg}\n + el.innerText;
+    }
+
+    // ============== UI Logic ================
+    function renderDynamicFields(){
+      const type = $('acctType').value;
+      const container = $('dynamicFields');
+      container.innerHTML = '';
+      if(type === 'Savings'){
+        container.innerHTML = `
+          <label for="balance">Initial Balance</label>
+          <input id="balance" placeholder="e.g. 5000" />
+          <div style="height:10px"></div>
+          <label for="interestRate">Interest Rate (% p.a.)</label>
+          <input id="interestRate" placeholder="e.g. 4" />
+        `;
+      } else if(type === 'Current'){
+        container.innerHTML = `
+          <label for="balance">Initial Balance</label>
+          <input id="balance" placeholder="e.g. 1000" />
+          <div style="height:10px"></div>
+          <label for="overdraftLimit">Overdraft Limit</label>
+          <input id="overdraftLimit" placeholder="e.g. 2000" />
+        `;
+      } else if(type === 'Loan'){
+        container.innerHTML = `
+          <label for="balance">Loan Principal</label>
+          <input id="balance" placeholder="e.g. 50000" />
+          <div style="height:10px"></div>
+          <label for="rate">Rate (% p.a.)</label>
+          <input id="rate" placeholder="e.g. 8.5" />
+          <div style="height:10px"></div>
+          <label for="termYears">Term (years)</label>
+          <input id="termYears" placeholder="e.g. 5" />
+        `;
+      }
+    }
+
+    function renderAccounts(){
+      const list = $('accounts');
+      list.innerHTML = '';
+      if(store.length === 0){ list.innerHTML = '<div class="muted">No accounts created yet.</div>'; return; }
+      store.forEach((acct, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'acct';
+        wrapper.innerHTML = `
+          <div class="meta">
+            <b>${acct.holder} — ${acct.type}</b>
+            <div class="muted">ID: ${acct.id}</div>
+            <div style="margin-top:6px">Balance: <b>${acct.balance}</b></div>
+          </div>
+          <div class="actions">
+            <button class="small" onclick="selectAccount(${idx})">Select</button>
+            <button class="small secondary" onclick="showInfo(${idx})">Info</button>
+            <button class="small" onclick="quickDeposit(${idx})">Deposit</button>
+            <button class="small secondary" onclick="quickWithdraw(${idx})">Withdraw</button>
+            <button class="small" onclick="specialOp(${idx})">Special</button>
+          </div>
+        `;
+        list.appendChild(wrapper);
+      });
+    }
+
+    // ============== Actions ================
+    let selectedIndex = null;
+    function selectAccount(i){ selectedIndex = i; log('Selected account ' + store[i].id); renderAccounts(); highlightSelected(); }
+    function highlightSelected(){
+      // simple visual hint — not required but helpful
+      const items = document.querySelectorAll('.accounts-list .acct');
+      items.forEach((it, idx) => it.style.boxShadow = (idx === selectedIndex) ? '0 8px 26px rgba(37,99,235,0.12)' : 'none');
+    }
+
+    function showInfo(i){
+      const acct = store[i];
+      const info = acct.info();
+      log('Info: ' + JSON.stringify(info));
+      alert(JSON.stringify(info, null, 2));
+    }
+
+    function quickDeposit(i){
+      try{
+        const amt = Number(prompt('Amount to deposit','1000')) || 0;
+        if(!amt) return;
+        store[i].deposit(amt);
+        log(Deposited ${amt} to ${store[i].id}. New balance ${store[i].balance});
+        renderAccounts();
+      }catch(e){ log('Error: ' + e.message); alert(e.message); }
+    }
+
+    function quickWithdraw(i){
+      try{
+        const amt = Number(prompt('Amount to withdraw','500')) || 0;
+        if(!amt) return;
+        store[i].withdraw(amt);
+        log(Withdrew ${amt} from ${store[i].id}. New balance ${store[i].balance});
+        renderAccounts();
+      }catch(e){ log('Error: ' + e.message); alert(e.message); }
+    }
+
+    function specialOp(i){
+      const acct = store[i];
+      try{
+        if(acct.type === 'Savings'){
+          const years = Number(prompt('Years for interest calculation', '1')) || 1;
+          const interest = acct.computeInterest(years);
+          log(Savings interest for ${years} year(s) on ${acct.id} = ${interest});
+          alert('Interest: ' + interest);
+        } else if(acct.type === 'Current'){
+          alert('Overdraft limit: ' + acct.overdraftLimit);
+        } else if(acct.type === 'Loan'){
+          const emi = acct.computeEMI();
+          log(Loan EMI for ${acct.id} = ${emi});
+          alert('Monthly EMI: ' + emi);
+        }
+      }catch(e){ log('Error: ' + e.message); alert(e.message); }
+    }
+
+    // batch actions (buttons)
+    $('depositAll')?.addEventListener('click', ()=>{
+      if(selectedIndex == null) return alert('Select an account first');
+      quickDeposit(selectedIndex);
+    });
+    $('withdrawAll')?.addEventListener('click', ()=>{
+      if(selectedIndex == null) return alert('Select an account first');
+      quickWithdraw(selectedIndex);
+    });
+    $('listAll')?.addEventListener('click', ()=>{ renderAccounts(); log('List refreshed'); });
+    $('clearAll')?.addEventListener('click', ()=>{ if(confirm('Remove all accounts?')){ store.length=0; renderAccounts(); log('All accounts removed'); } });
+
+    // Form handlers
+    $('acctType').addEventListener('change', renderDynamicFields);
+    $('clearBtn').addEventListener('click', ()=>{ $('holder').value=''; renderDynamicFields(); });
+
+    $('createBtn').addEventListener('click', ()=>{
+      try{
+        const type = $('acctType').value;
+        const holder = $('holder').value.trim() || 'Unnamed';
+        const balance = Number(document.getElementById('balance')?.value || 0);
+        const opts = { holder, balance };
+        if(type === 'Savings') opts.interestRate = Number(document.getElementById('interestRate')?.value || 4);
+        if(type === 'Current') opts.overdraftLimit = Number(document.getElementById('overdraftLimit')?.value || 0);
+        if(type === 'Loan'){
+          opts.rate = Number(document.getElementById('rate')?.value || 8.5);
+          opts.termYears = Number(document.getElementById('termYears')?.value || 1);
+        }
+        const acct = createAccount(type, opts);
+        store.push(acct);
+        log(Created ${type} account ${acct.id} for ${acct.holder});
+        renderAccounts();
+      }catch(e){ log('Error: ' + e.message); alert(e.message); }
+    });
+
+    // initialize form and render
+    renderDynamicFields();
+    renderAccounts();
+
+    // expose a few functions to global for onclick handlers
+    window.selectAccount = selectAccount;
+    window.showInfo = showInfo;
+    window.quickDeposit = quickDeposit;
+    window.quickWithdraw = quickWithdraw;
+    window.specialOp = specialOp;
+  </script>
+</body>
+</html>
